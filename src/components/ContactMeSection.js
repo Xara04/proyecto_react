@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useFormik } from "formik";
 import {
   Box,
@@ -12,150 +12,162 @@ import {
   Textarea,
   VStack,
 } from "@chakra-ui/react";
-import * as Yup from 'yup';
+import * as Yup from "yup";
 import FullScreenSection from "./FullScreenSection";
 import useSubmit from "../hooks/useSubmit";
 import { useAlertContext } from "../context/alertContext";
+
+// Campo de formulario reutilizable
+const FormField = ({ id, label, children, error, touched }) => (
+  <FormControl isInvalid={touched && !!error}>
+    <FormLabel htmlFor={id}>{label}</FormLabel>
+    {children}
+    <FormErrorMessage>{error}</FormErrorMessage>
+  </FormControl>
+);
 
 const ContactMeSection = () => {
   const { isLoading, response, submit } = useSubmit();
   const { onOpen } = useAlertContext();
 
-  // Reference for the header element (for the bonus task)
+  // Header scroll animation
   const headerRef = useRef(null);
-  let lastScrollY = useRef(0); // To store the previous scroll position
+  const lastScrollY = useRef(0);
 
-  // Handle header animation on scroll (Bonus Task)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const headerElement = headerRef.current;
-
       if (!headerElement) return;
-
-      if (currentScrollY > lastScrollY.current && currentScrollY > 0) {
-        // Scrolling down
-        headerElement.style.transform = "translateY(-200px)";
-      } else {
-        // Scrolling up
-        headerElement.style.transform = "translateY(0)";
-      }
+      headerElement.style.transform =
+        currentScrollY > lastScrollY.current && currentScrollY > 0
+          ? "translateY(-200px)"
+          : "translateY(0)";
       lastScrollY.current = currentScrollY;
     };
-
-    window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
-
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const formik = useFormik({
-    // a) initialValues
     initialValues: {
-      firstName: '',
-      email: '',
-      type: 'hireMe', // Default value for select
-      comment: '',
+      firstName: "",
+      email: "",
+      type: "hireMe",
+      comment: "",
     },
-    // a) onSubmit function
-    onSubmit: async (values) => {
-      await submit('https://example.com/api', values); // Replace with your actual API endpoint
+    onSubmit: async (values, { resetForm }) => {
+      await submit("https://example.com/api", values);
+      // El reset se maneja en el useEffect de abajo
     },
-    // a) validationSchema
     validationSchema: Yup.object({
-      firstName: Yup.string()
-        .required('Required'),
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Required'),
-      type: Yup.string(), // No specific validation for type, as it's a select with predefined options
-      comment: Yup.string()
-        .min(25, 'Must be at least 25 characters')
-        .required('Required'),
+      firstName: Yup.string().required("Required"),
+      email: Yup.string().email("Invalid email address").required("Required"),
+      type: Yup.string(),
+      comment: Yup.string().min(25, "Must be at least 25 characters").required("Required"),
     }),
   });
 
-  // e) Listen for changes in the 'response' object
+  // Memoiza resetForm para evitar advertencias de dependencias
+  const resetForm = useCallback(() => formik.resetForm(), [formik]);
+
   useEffect(() => {
     if (response) {
-      onOpen(response.type, response.message); // Display the alert
-
-      if (response.type === 'success') {
-        formik.resetForm(); // Reset form on success
+      onOpen(response.type, response.message);
+      if (response.type === "success") {
+        resetForm();
       }
     }
-  }, [response, onOpen, formik.resetForm]); // Dependencies for useEffect
+  }, [response, onOpen, resetForm]);
+
+  // Opciones del select
+  const enquiryOptions = [
+    { value: "hireMe", label: "Freelance project proposal" },
+    { value: "openSource", label: "Open source consultancy session" },
+    { value: "feedback", label: "Feedback about my portfolio" },
+    { value: "collaboration", label: "Collaboration opportunity" },
+    { value: "other", label: "Other" },
+  ];
 
   return (
-    <FullScreenSection
-      isDarkBackground
-      backgroundColor="#512DA8"
-      py={16}
-      spacing={8}
-    >
+    <FullScreenSection isDarkBackground backgroundColor="#c7352b" py={16} spacing={8}>
       <VStack w="1024px" p={32} alignItems="flex-start">
-        <Heading as="h1" id="contactme-section">
-          Contact me
-        </Heading>
-        <Box p={6} rounded="md" w="100%">
-          <form onSubmit={formik.handleSubmit}> {/* d) Connect onSubmit to formik.handleSubmit */}
+        <Box
+          position="sticky"
+          top="0"
+          zIndex={10}
+          bg="#c7352b"
+          px={4}
+          py={2}
+          borderRadius="md"
+          boxShadow="md"
+          width="auto"
+        >
+          <Heading as="h1" id="contactme-section">
+            Contacto
+          </Heading>
+        </Box>
+        <Box p={6} rounded="md" w="100%" mt="80px">
+          <form onSubmit={formik.handleSubmit}>
             <VStack spacing={4}>
-              {/* firstName field */}
-              <FormControl isInvalid={formik.touched.firstName && !!formik.errors.firstName}>
-                <FormLabel htmlFor="firstName">Name</FormLabel>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  {...formik.getFieldProps('firstName')} 
-                />
-                <FormErrorMessage>{formik.errors.firstName}</FormErrorMessage> {/* c) Display error message */}
-              </FormControl>
-
-              {/* Email field */}
-              <FormControl isInvalid={formik.touched.email && !!formik.errors.email}>
-                <FormLabel htmlFor="email">Email Address</FormLabel>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  {...formik.getFieldProps('email')} 
-                />
-                <FormErrorMessage>{formik.errors.email}</FormErrorMessage> {/* c) Display error message */}
-              </FormControl>
-
-              {/* Type of enquiry field */}
-              <FormControl isInvalid={formik.touched.type && !!formik.errors.type}>
-                <FormLabel htmlFor="type">Type of enquiry</FormLabel>
+              <FormField
+                id="firstName"
+                label="Name"
+                error={formik.errors.firstName}
+                touched={formik.touched.firstName}
+              >
+                <Input id="firstName" name="firstName" {...formik.getFieldProps("firstName")} />
+              </FormField>
+              <FormField
+                id="email"
+                label="Email Address"
+                error={formik.errors.email}
+                touched={formik.touched.email}
+              >
+                <Input id="email" name="email" type="email" {...formik.getFieldProps("email")} />
+              </FormField>
+              <FormField
+                id="type"
+                label="Type of enquiry"
+                error={formik.errors.type}
+                touched={formik.touched.type}
+              >
                 <Select
                   id="type"
                   name="type"
-                  {...formik.getFieldProps('type')} 
+                  placeholder="Select enquiry type"
+                  bg="white"
+                  color="black"
+                  _placeholder={{ color: "gray.500" }}
+                  {...formik.getFieldProps("type")}
                 >
-                  <option value="hireMe">Freelance project proposal</option>
-                  <option value="openSource">
-                    Open source consultancy session
-                  </option>
-                  <option value="other">Other</option>
+                  {enquiryOptions.map(option => (
+                    <option key={option.value} value={option.value} style={{ color: "black" }}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Select>
-                <FormErrorMessage>{formik.errors.type}</FormErrorMessage> {/* c) Display error message */}
-              </FormControl>
-
-              {/* Your message field */}
-              <FormControl isInvalid={formik.touched.comment && !!formik.errors.comment}>
-                <FormLabel htmlFor="comment">Your message</FormLabel>
+              </FormField>
+              <FormField
+                id="comment"
+                label="Your message"
+                error={formik.errors.comment}
+                touched={formik.touched.comment}
+              >
                 <Textarea
                   id="comment"
                   name="comment"
                   height={250}
-                  {...formik.getFieldProps('comment')} 
+                  {...formik.getFieldProps("comment")}
                 />
-                <FormErrorMessage>{formik.errors.comment}</FormErrorMessage> {/* c) Display error message */}
-              </FormControl>
-
-              {/* Submit Button */}
-              <Button type="submit" colorScheme="purple" width="full" isLoading={isLoading}> {/* e) Show loading indicator */}
+              </FormField>
+              <Button
+                type="submit"
+                colorScheme="teal"
+                width="full"
+                isLoading={isLoading}
+                aria-label="Submit contact form"
+              >
                 Submit
               </Button>
             </VStack>

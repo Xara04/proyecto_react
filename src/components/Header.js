@@ -1,36 +1,47 @@
 import React, { useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import {
+  faFacebook,
   faGithub,
   faLinkedin,
-  faMedium,
-  faStackOverflow,
+  faYahoo,
 } from "@fortawesome/free-brands-svg-icons";
 import { Box, HStack } from "@chakra-ui/react";
 
+// Array de redes sociales
 const socials = [
   {
-    icon: faEnvelope,
-    url: "mailto: hello@example.com",
+    icon: faYahoo,
+    url: "https://yahoo.com",
+    label: "Yahoo",
   },
   {
     icon: faGithub,
     url: "https://github.com",
+    label: "GitHub",
   },
   {
     icon: faLinkedin,
     url: "https://www.linkedin.com",
+    label: "LinkedIn",
   },
   {
-    icon: faMedium,
-    url: "https://medium.com",
+    icon: faFacebook,
+    url: "https://facebook.com",
+    label: "Facebook",
   },
+];
 
+// Array de navegación interna
+const navLinks = [
+  { id: "projects", label: "Proyectos" },
+  { id: "contactme", label: "Contacto" },
 ];
 
 const Header = () => {
-  const handleClick = (anchor) => () => {
+  // Scroll suave a la sección correspondiente
+  const handleClick = (anchor) => (e) => {
+    e.preventDefault();
     const id = `${anchor}-section`;
     const element = document.getElementById(id);
     if (element) {
@@ -43,6 +54,7 @@ const Header = () => {
 
   return (
     <Box
+      as="header"
       position="fixed"
       top={0}
       left={0}
@@ -52,47 +64,40 @@ const Header = () => {
       transitionDuration=".3s"
       transitionTimingFunction="ease-in-out"
       backgroundColor="#18181b"
-       zIndex={1000} // Un valor alto para asegurar que esté por encima de otros elementos
+      zIndex={1000}
     >
       <Box color="white" maxWidth="1280px" margin="0 auto">
-        <HStack
-          px={16}
-          py={4}
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          {/*
-          ---
-          ### a) Enlaces externos de redes sociales
-          ---
-          */}
-          <nav>
-            <HStack spacing={4}> {/* Ajustado el espaciado para los iconos */}
-              {socials.map((social, index) => (
+        <HStack px={16} py={4} justifyContent="space-between" alignItems="center">
+          {/* Redes sociales */}
+          <nav aria-label="Redes sociales">
+            <HStack spacing={4}>
+              {socials.map((social) => (
                 <a
-                  key={index} // Se recomienda usar una key única para cada elemento en listas
+                  key={social.label}
                   href={social.url}
-                  target="_blank" // Abre el enlace en una nueva pestaña
-                  rel="noopener noreferrer" // Mejora la seguridad al abrir enlaces externos
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  tabIndex={0}
                 >
                   <FontAwesomeIcon icon={social.icon} size="2x" />
                 </a>
               ))}
             </HStack>
           </nav>
-          {/*
-          ---
-          ### b) Enlaces internos a secciones
-          ---
-          */}
-          <nav>
+          {/* Navegación interna */}
+          <nav aria-label="Navegación principal">
             <HStack spacing={8}>
-              <a href="#projects-section" onClick={handleClick("projects")}>
-                Proyectos
-              </a>
-              <a href="#contactme-section" onClick={handleClick("contactme")}>
-                Contacto
-              </a>
+              {navLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={`#${link.id}-section`}
+                  onClick={handleClick(link.id)}
+                  tabIndex={0}
+                >
+                  {link.label}
+                </a>
+              ))}
             </HStack>
           </nav>
         </HStack>

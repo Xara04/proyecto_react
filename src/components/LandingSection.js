@@ -13,13 +13,13 @@ const LandingSection = () => (
     justifyContent="center"
     alignItems="center"
     isDarkBackground
-    backgroundColor="#2A4365"
+    backgroundColor="#d5ad51"
   >
     {/* Use VStack to stack elements vertically */}
     <VStack spacing={4}> {/* 'spacing' adds space between stacked items */}
       {/* Avatar component */}
       <Avatar
-        src="https://i.pravatar.cc/150?img=7"
+        src="https://cdni.iconscout.com/illustration/premium/thumb/chica-avatar-11255219-9022799.png"
         size="2xl" // You can adjust the size as needed, e.g., "xl", "2xl", "full"
         name="Pete" // Alt text for accessibility
       />
